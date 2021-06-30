@@ -9,11 +9,13 @@ import UIKit
 
 class ViewController: UITableViewController {
     
-    let searchController = UISearchController(searchResultsController: nil)
+    private var activityIndicator: UIActivityIndicatorView!
+    
+    private let searchController = UISearchController(searchResultsController: nil)
     
     var service: ServiceRequest?
     
-    var repositories: [ItemsResults]?
+    private var repositories: [ItemsResults]?
     
     var errors = String()
     
@@ -26,34 +28,32 @@ class ViewController: UITableViewController {
         
         service = ServiceRequest()
         
+        activityIndicator = UIActivityIndicatorView()
+        activityIndicator.center = self.view.center
+        activityIndicator.hidesWhenStopped = true
+        activityIndicator.style = .large
+        
+        view.addSubview(activityIndicator)
+        
         tableView.register(UINib(nibName: "SearchCell", bundle: nil), forCellReuseIdentifier: "SearchCell")
         tableView.register(UINib(nibName: "ErrorCell", bundle: nil), forCellReuseIdentifier: "ErrorCell")
-        
         tableView.setEmptyView(title: "Пока пусто :(", message: "Введите в поиске ", messageImage: #imageLiteral(resourceName: "github"))
         
         // Setup the Search Controller
-        searchController.delegate = self
         searchController.searchBar.delegate = self
-        searchController.obscuresBackgroundDuringPresentation = false
-        searchController.searchBar.placeholder = "Search..."
+        searchController.searchBar.setValue("Отмена", forKey: "cancelButtonText")
+        searchController.searchBar.placeholder = "Поиск..."
         navigationItem.searchController = searchController
         definesPresentationContext = true
         
     }
     
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        ReachabilityManager.isUnreachable { _ in
-            DispatchQueue.main.async {
-                let viewControllerMessageList = self.storyboard?.instantiateViewController(withIdentifier: "OfflineViewController") as! OfflineViewController
-                self.navigationController?.pushViewController(viewControllerMessageList, animated: true)
-            }
+    func showActivityIndicator(show: Bool) {
+        if show {
+            activityIndicator.startAnimating()
+        } else {
+            activityIndicator.stopAnimating()
         }
-        
-        ReachabilityManager.isReachable { _ in
-            //self.checkExcursionList()
-        }
-
     }
     
 // MARK: UITableViewDelegate and DataSource
@@ -75,18 +75,19 @@ class ViewController: UITableViewController {
         } else {
             guard let items = repositories?[indexPath.row] else { return cell }
             
-            cell.starLabel.text = items.stargazers_count?.description
+            cell.starLabel.text = items.stargazersCount?.description
             cell.languageLabel.text = items.language
-            cell.titleLabel.text = items.full_name
+            cell.titleLabel.text = items.fullName
             cell.detailLabel.text = items.description
-            
+            if let url = items.owner?.avatarUrl {
+                cell.avatarImageView.loadImageUsingCacheWithUrlString(url) { _ in }
+            }
         }
         
         return cell
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        
         if errors == "" {
             guard let items = repositories?[indexPath.row] else { return }
             
@@ -99,38 +100,34 @@ class ViewController: UITableViewController {
         tableView.deselectRow(at: indexPath, animated: true)
     }
     
-    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return UITableView.automaticDimension
-    }
-    
-    override func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
-        return UITableView.automaticDimension
-    }
 }
 
 // MARK: - UISearch Delegate
-extension ViewController: UISearchControllerDelegate {
-}
 
 extension ViewController: UISearchBarDelegate {
     func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
-        guard let searchText = searchBar.text else { return }
+        guard let text = searchBar.text, !text.isEmpty else {
+            return
+        }
         
-        let stringFixed = searchText.replacingOccurrences(of: " ", with: "+")
-
-        service?.getSearchList(searchText: stringFixed, completion: { result in
-            if result.message != nil {
-                self.errors = result.message ?? ""
-            } else {
-                self.repositories = result.items
-            }
-            
-            DispatchQueue.main.async {
-                self.tableView.restore()
-                self.tableView.reloadData()
-                self.searchController.isActive = false
+        showActivityIndicator(show: true)
+        
+        let stringFixed = text.replacingOccurrences(of: " ", with: "+")
+        
+        service?.getSearchList(searchText: stringFixed, completion: { [weak self] result in
+            switch result {
+            case .success(let response):
+                self?.repositories = response.items
+                
+                DispatchQueue.main.async {
+                    self?.showActivityIndicator(show: false)
+                    self?.tableView.restore()
+                    self?.tableView.reloadData()
+                    self?.searchController.dismiss(animated: true, completion: nil)
+                }
+            case .failure(let error):
+                print(error)
             }
         })
     }
 }
-

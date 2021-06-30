@@ -25,8 +25,6 @@ class FavoritesViewController: UITableViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         
-        print(DataManager.getList())
-        
         reloadDocumentsIsEmpty()
         
     }
@@ -62,6 +60,7 @@ class FavoritesViewController: UITableViewController {
         cell.languageLabel.text = items.language
         cell.titleLabel.text = items.repositories
         cell.detailLabel.text = items.descriptions
+        
         
         return cell
     }

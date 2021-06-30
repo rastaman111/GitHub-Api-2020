@@ -9,7 +9,7 @@ import UIKit
 
 class SearchCell: UITableViewCell {
     
-    @IBOutlet weak var docImage: UIImageView!
+    @IBOutlet weak var avatarImageView: UIImageView!
     @IBOutlet weak var starImage: UIImageView!
     
     @IBOutlet weak var titleLabel: UILabel!

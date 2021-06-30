@@ -8,22 +8,16 @@
 import Foundation
 import Alamofire
 
-enum HttpMethod: String {
-    case get
-    case post
-    case put
-    case patch
-    case delete
-}
-
 class NetworkManager {
     
-    private let alamofireManager: SessionManager
+    private let alamofireManager: Session
     
     init() {
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = 60
-        self.alamofireManager = SessionManager(configuration: configuration)
+        configuration.timeoutIntervalForResource = 60
+        
+        self.alamofireManager = Session(configuration: configuration)
     }
     
     func get(endpoint: String,
@@ -35,45 +29,6 @@ class NetworkManager {
                      parameters: parameters,
                      headers: headers,
                      method: .get,
-                     completion: completion)
-        
-    }
-    
-    func post(endpoint: String,
-              parameters: Parameters?,
-              headers: HTTPHeaders?,
-              completion: @escaping (Any?, Data?, Error?) -> Void) {
-        
-        self.request(endpoint: endpoint,
-                     parameters: parameters,
-                     headers: headers,
-                     method: .post,
-                     completion: completion)
-        
-    }
-    
-    func put(endpoint: String,
-             parameters: Parameters?,
-             headers: HTTPHeaders?,
-             completion: @escaping (Any?, Data?, Error?) -> Void) {
-        
-        self.request(endpoint: endpoint,
-                     parameters: parameters,
-                     headers: headers,
-                     method: .put,
-                     completion: completion)
-        
-    }
-    
-    func delete(endpoint: String,
-                parameters: Parameters?,
-                headers: HTTPHeaders?,
-                completion: @escaping (Any?, Data?, Error?) -> Void) {
-        
-        self.request(endpoint: endpoint,
-                     parameters: parameters,
-                     headers: headers,
-                     method: .delete,
                      completion: completion)
         
     }

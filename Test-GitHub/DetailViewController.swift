@@ -6,27 +6,23 @@
 //
 
 import UIKit
-import Kingfisher
 
 class DetailViewController: UIViewController {
+    
+    private var activityIndicator: UIActivityIndicatorView!
     
     @IBOutlet weak var profileImage: UIImageView!
     
     @IBOutlet weak var nameUserLabel: UILabel!
+    @IBOutlet weak var loginUserLabel: UILabel!
+    @IBOutlet weak var locationUserLabel: UILabel!
+    @IBOutlet weak var followersUserLabel: UILabel!
     @IBOutlet weak var nameRepositoriesLabel: UILabel!
     @IBOutlet weak var descriptionTextView: UITextView!
-    
-    @IBOutlet weak var addFavoritesButton: UIButton! {
-        didSet {
-            addFavoritesButton.isHidden = true
-        }
-    }
     
     var repositories: ItemsResults?
     
     var service: ServiceRequest?
-    
-    var listItems = [FavoritesList]()
     
     // MARK: Lifecycle
 
@@ -34,45 +30,50 @@ class DetailViewController: UIViewController {
         super.viewDidLoad()
         
         service = ServiceRequest()
-
+        
+        activityIndicator = UIActivityIndicatorView()
+        activityIndicator.center = self.view.center
+        activityIndicator.hidesWhenStopped = true
+        activityIndicator.style = .large
+        
+        view.addSubview(activityIndicator)
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
+        showActivityIndicator(show: true)
+        
         guard let userName = repositories?.owner?.login else { return }
         
-        service?.getSearchUser(searchText: userName, completion: { result in
-            DispatchQueue.main.async {
-                if result.message != nil {
-                    self.nameUserLabel.text = result.message
-                    self.nameRepositoriesLabel.text = ""
-                    self.descriptionTextView.text = ""
-                    self.addFavoritesButton.isHidden = true
-                } else {
-                    guard let imageUrl = result.avatar_url else { return }
+        service?.getSearchUser(searchText: userName, completion: { [weak self] result in
+            switch result {
+            case .success(let response):
+                DispatchQueue.main.async {
+                    self?.showActivityIndicator(show: false)
+                    self?.nameUserLabel.text = response.name
+                    self?.loginUserLabel.text = response.login
+                    self?.locationUserLabel.text = response.location
+                    self?.followersUserLabel.text = "\(response.followers) followers . \(response.following) following"
+                    self?.locationUserLabel.text = response.location
                     
-                    self.profileImage.kf.setImage(with: URL(string: imageUrl))
-                    self.nameUserLabel.text = result.name
-                    self.nameRepositoriesLabel.text = self.repositories?.full_name
-                    self.descriptionTextView.text = self.repositories?.description
-                   
-                    self.listItems = DataManager.getList()
+                    self?.nameRepositoriesLabel.text = self?.repositories?.fullName
+                    self?.descriptionTextView.text = self?.repositories?.description
                     
-                    if let _ = self.listItems.firstIndex(where: { $0.repositories == self.repositories?.full_name }) {
-                        self.addFavoritesButton.isHidden = true
-                    } else {
-                        self.addFavoritesButton.isHidden = false
-                    }
+                    guard let imageUrl = response.avatarUrl else { return }
+                    self?.profileImage.loadImageUsingCacheWithUrlString(imageUrl) { _ in }
                 }
+            case .failure(let error):
+                print(error)
             }
         })
     }
     
-    @IBAction func AddFavoritRepositories(_ sender: UIButton) {
-        
-        DataManager.insertItemList(descriptions: repositories!.description!, language: repositories!.language!, repositories: repositories!.full_name!, stars: repositories!.stargazers_count!.description)
-        
-        addFavoritesButton.isHidden = true
+    func showActivityIndicator(show: Bool) {
+        if show {
+            activityIndicator.startAnimating()
+        } else {
+            activityIndicator.stopAnimating()
+        }
     }
 }
