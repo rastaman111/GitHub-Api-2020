@@ -115,19 +115,16 @@ extension ViewController: UISearchBarDelegate {
         let stringFixed = text.replacingOccurrences(of: " ", with: "+")
         
         service?.getSearchList(searchText: stringFixed, completion: { [weak self] result in
-            switch result {
-            case .success(let response):
-                self?.repositories = response.items
-                
-                DispatchQueue.main.async {
-                    self?.showActivityIndicator(show: false)
-                    self?.tableView.restore()
-                    self?.tableView.reloadData()
-                    self?.searchController.dismiss(animated: true, completion: nil)
-                }
-            case .failure(let error):
-                print(error)
+            
+            self?.repositories = result.items
+            
+            DispatchQueue.main.async {
+                self?.showActivityIndicator(show: false)
+                self?.tableView.restore()
+                self?.tableView.reloadData()
+                self?.searchController.dismiss(animated: true, completion: nil)
             }
+            
         })
     }
 }

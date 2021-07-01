@@ -47,24 +47,19 @@ class DetailViewController: UIViewController {
         guard let userName = repositories?.owner?.login else { return }
         
         service?.getSearchUser(searchText: userName, completion: { [weak self] result in
-            switch result {
-            case .success(let response):
-                DispatchQueue.main.async {
-                    self?.showActivityIndicator(show: false)
-                    self?.nameUserLabel.text = response.name
-                    self?.loginUserLabel.text = response.login
-                    self?.locationUserLabel.text = response.location
-                    self?.followersUserLabel.text = "\(response.followers) followers . \(response.following) following"
-                    self?.locationUserLabel.text = response.location
-                    
-                    self?.nameRepositoriesLabel.text = self?.repositories?.fullName
-                    self?.descriptionTextView.text = self?.repositories?.description
-                    
-                    guard let imageUrl = response.avatarUrl else { return }
-                    self?.profileImage.loadImageUsingCacheWithUrlString(imageUrl) { _ in }
-                }
-            case .failure(let error):
-                print(error)
+            DispatchQueue.main.async {
+                self?.showActivityIndicator(show: false)
+                self?.nameUserLabel.text = result.name
+                self?.loginUserLabel.text = result.login
+                self?.locationUserLabel.text = result.location
+                self?.followersUserLabel.text = "\(result.followers) followers . \(result.following) following"
+                self?.locationUserLabel.text = result.location
+                
+                self?.nameRepositoriesLabel.text = self?.repositories?.fullName
+                self?.descriptionTextView.text = self?.repositories?.description
+                
+                guard let imageUrl = result.avatarUrl else { return }
+                self?.profileImage.loadImageUsingCacheWithUrlString(imageUrl) { _ in }
             }
         })
     }

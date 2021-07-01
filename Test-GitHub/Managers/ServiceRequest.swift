@@ -16,37 +16,34 @@ class ServiceRequest {
         sessionManager = NetworkManager()
     }
     
-    public func getSearchList(searchText: String, completion: @escaping (Result<SearchResultModel, Error>) -> ()) {
+    public func getSearchList(searchText: String, completion: @escaping (SearchResultModel) -> ()) {
         
         sessionManager?.get(endpoint: NetworkEndpointType.search.name + "\(searchText)+language:swift&sort=stars@order=desc", parameters: nil, headers: nil, completion: { (result, data, error) in
             print("Validation Successful")
             
-            if let error = error {
-                completion(.failure(error))
-            } else if let data = data {
-                guard let decodeData = SearchResultModel.decodeFromData(data: data) else {
+            if result != nil {
+                guard let decodeData = SearchResultModel.decodeFromData(data: data!) else {
                     print("Decode error")
                     return
                 }
                 
-                completion(.success(decodeData))
+                completion(decodeData)
             }
         })
     }
     
-    public func getSearchUser(searchText: String, completion: @escaping (Result<SearchUserModel, Error>) -> ()) {
+    public func getSearchUser(searchText: String, completion: @escaping (SearchUserModel) -> ()) {
         
         sessionManager?.get(endpoint: NetworkEndpointType.users.name + searchText, parameters: nil, headers: nil, completion: { (result, data, error) in
             print("Validation Successful")
             
-            if let error = error {
-                completion(.failure(error))
-            } else if let data = data {
-                guard let decodeData = SearchUserModel.decodeFromData(data: data) else {
+            if result != nil {
+                guard let decodeData = SearchUserModel.decodeFromData(data: data!) else {
                     print("Decode error")
                     return
                 }
-                completion(.success(decodeData))
+                
+                completion(decodeData)
             }
         })
     }
